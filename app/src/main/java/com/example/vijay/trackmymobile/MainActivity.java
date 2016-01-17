@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void trackMyLocation(View view) {
+    public void trackMyMobile(View view) {
         Intent intent = new Intent(this, TrackMobile.class);
         startActivity(intent);
 
