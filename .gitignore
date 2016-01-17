@@ -8,3 +8,5 @@
 build/
 *.dex
 .idea
+*.iml
+app/*.iml
