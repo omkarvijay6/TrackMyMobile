@@ -4,11 +4,12 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:showIn="@layout/activity_my">
+    tools:showIn="@layout/activity_main">
 
     <Button
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/track_my_mobile" />
+        android:text="@string/track_my_mobile"
+        android:onClick="trackMyMobile" />
 
 </LinearLayout>
