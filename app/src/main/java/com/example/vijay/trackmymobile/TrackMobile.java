@@ -98,6 +98,11 @@ public class TrackMobile extends FragmentActivity implements
      */
     private void setUpMap(LatLng latlong) {
         mMap.addMarker(new MarkerOptions().position(latlong).title("Marker"));
+        mMap.setMyLocationEnabled(true); // false to disable
+        mMap.getUiSettings().setZoomControlsEnabled(true);
+        mMap.getUiSettings().setMyLocationButtonEnabled(true);
+        mMap.getUiSettings().setZoomGesturesEnabled(true);
+        mMap.getUiSettings().setCompassEnabled(true);
     }
 
     @Override
@@ -162,15 +167,10 @@ public class TrackMobile extends FragmentActivity implements
         if (null != mCurrentLocation){
             String lat = String.valueOf(mCurrentLocation.getLatitude());
             String lng = String.valueOf(mCurrentLocation.getLongitude());
-
-            TextView mlocationText = new TextView(this);
-            mlocationText.setText("At Time: " + mLastUpdateTime + "\n" +
-                    "Latitude: " + lat + "\n" +
-                    "Longitude: " + lng + "\n" +
-                    "Accuracy: " + mCurrentLocation.getAccuracy() + "\n" +
-                    "Provider: " + mCurrentLocation.getProvider());
-//            RelativeLayout layout = (RelativeLayout) findViewById(R.id.location);
-//            layout.addView(mlocationText);
+            double d_lat = Double.parseDouble(lat);
+            double d_lng = Double.parseDouble(lng);
+            latlong = new LatLng(d_lat, d_lng);
+            setUpMap(latlong);
         } else {
             Log.d(TAG, "location is null ...............");
         }
