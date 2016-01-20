@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -18,6 +19,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
+import com.google.android.gms.maps.CameraUpdate;
 
 
 import java.text.DateFormat;
@@ -83,10 +85,10 @@ public class TrackMobile extends FragmentActivity implements
             mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
                     .getMap();
             // Check if we were successful in obtaining the map.
-            if (mMap != null) {
-                latlong = new LatLng(49, 79);
-                setUpMap(latlong);
-            }
+//            if (mMap != null) {
+//                latlong = new LatLng(49, 79);
+//                setUpMap(latlong);
+//            }
         }
     }
 
@@ -98,11 +100,14 @@ public class TrackMobile extends FragmentActivity implements
      */
     private void setUpMap(LatLng latlong) {
         mMap.addMarker(new MarkerOptions().position(latlong).title("Marker"));
-        mMap.setMyLocationEnabled(true); // false to disable
+        mMap.setMyLocationEnabled(false); // false to disable
         mMap.getUiSettings().setZoomControlsEnabled(true);
-        mMap.getUiSettings().setMyLocationButtonEnabled(true);
+        mMap.getUiSettings().setMyLocationButtonEnabled(false);
         mMap.getUiSettings().setZoomGesturesEnabled(true);
         mMap.getUiSettings().setCompassEnabled(true);
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latlong, 18);
+        mMap.animateCamera(cameraUpdate);
+
     }
 
     @Override
