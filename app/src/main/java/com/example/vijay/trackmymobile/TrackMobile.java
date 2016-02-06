@@ -20,10 +20,19 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.maps.CameraUpdate;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
+
+import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import cz.msebera.android.httpclient.Header;
 
 public class TrackMobile extends FragmentActivity implements
         LocationListener,
@@ -34,10 +43,13 @@ public class TrackMobile extends FragmentActivity implements
     private static final String TAG = "TrackMobileActivity";
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest = new LocationRequest();
+    private AsyncHttpClient mClient = new AsyncHttpClient();
+    private RequestParams mParams = new RequestParams();
     private Location mCurrentLocation;
     private LatLng latlong;
-    private static final long INTERVAL = 1000 * 10;
+    private static final long INTERVAL = 10000;
     private static final long FASTEST_INTERVAL = 1000 * 5;
+    private static final String POST_URL = "http://52.16.146.63/vehicle/testdata/";
     String mLastUpdateTime;
 
     @Override
@@ -175,6 +187,7 @@ public class TrackMobile extends FragmentActivity implements
             double d_lat = Double.parseDouble(lat);
             double d_lng = Double.parseDouble(lng);
             latlong = new LatLng(d_lat, d_lng);
+            sendPost(d_lat, d_lng);
             setUpMap(latlong);
         } else {
             Log.d(TAG, "location is null ...............");
@@ -192,6 +205,29 @@ public class TrackMobile extends FragmentActivity implements
         mLocationRequest.setInterval(INTERVAL);
         mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
+
+    private void sendPost(double d_lat, double d_lng) {
+        Map<String, Double> geo_map = new HashMap<String, Double>();
+        geo_map.put("lat", d_lat);
+        geo_map.put("long", d_lng);
+        JSONObject obj = new JSONObject(geo_map);
+        mParams.put("locations", obj);
+
+        mClient.post(POST_URL, mParams, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                // Root JSON in response is an dictionary i.e { "data : [ ... ] }
+                // Handle resulting parsed JSON response here
+                Log.d(TAG, "Success post to remote api ........." + statusCode);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String res, Throwable t) {
+                // called when response HTTP status is "4XX" (eg. 401, 403, 404)
+                Log.d(TAG, "Failure to remote api ...." + statusCode);
+            }
+        });
     }
 }
 
