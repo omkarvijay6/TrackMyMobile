@@ -9,6 +9,8 @@ import android.widget.TextView;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -20,6 +22,9 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.maps.CameraUpdate;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 
 import java.text.DateFormat;
@@ -99,7 +104,12 @@ public class TrackMobile extends FragmentActivity implements
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap(LatLng latlong) {
-        mMap.addMarker(new MarkerOptions().position(latlong).title("Marker"));
+        mMap.addMarker(new MarkerOptions()
+                .position(latlong)
+                .title("225D")
+                .snippet("Lingampally to Dilshuknagar")
+                .draggable(false)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
         mMap.setMyLocationEnabled(false); // false to disable
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
