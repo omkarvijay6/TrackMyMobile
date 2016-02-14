@@ -4,31 +4,31 @@ import android.location.Location;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.maps.CameraUpdate;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
+import android.os.Handler;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 
+import org.json.JSONObject;
 
-import java.text.DateFormat;
-import java.util.Date;
+import cz.msebera.android.httpclient.Header;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class TrackMobile extends FragmentActivity implements
         LocationListener,
@@ -37,29 +37,17 @@ public class TrackMobile extends FragmentActivity implements
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private static final String TAG = "TrackMobileActivity";
-    private GoogleApiClient mGoogleApiClient;
-    private LocationRequest mLocationRequest = new LocationRequest();
-    private Location mCurrentLocation;
+    private AsyncHttpClient mClient = new AsyncHttpClient();
+    Handler mHandler = new Handler();
     private LatLng latlong;
-    private static final long INTERVAL = 1000 * 10;
-    private static final long FASTEST_INTERVAL = 1000 * 5;
-    String mLastUpdateTime;
+    private static final long FIVE_SECONDS = 5000;
+    private static final String GET_URL = "http://52.16.146.63/vehicle/location/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_track_mobile);
-        setUpMapIfNeeded();
-
-        createLocationRequest();
-
-        if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(LocationServices.API)
-                    .build();
-        }
+        scheduleGetLocations();
     }
 
     @Override
@@ -128,14 +116,13 @@ public class TrackMobile extends FragmentActivity implements
 
     @Override
     public void onLocationChanged(Location location) {
-        mCurrentLocation = location;
-        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-        updateUI();
+//        mCurrentLocation = location;
+//        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+//        updateUI();
     }
 
     @Override
     public void onConnected(Bundle bundle) {
-        startLocationUpdates();
 
     }
 
@@ -145,65 +132,54 @@ public class TrackMobile extends FragmentActivity implements
 
     }
 
+    public void scheduleGetLocations() {
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        stopLocationUpdates();
+        mHandler.postDelayed(new Runnable() {
+            public void run() {
+                getLocation();          // this method will contain your almost-finished HTTP calls
+                mHandler.postDelayed(this, FIVE_SECONDS);
+            }
+        }, FIVE_SECONDS);
     }
 
-    protected void stopLocationUpdates() {
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-        Log.d(TAG, "Location update stopped .......................");
+    private void getLocation() {
+        RequestParams mParams = new RequestParams();
+
+        mClient.get(GET_URL, mParams, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+//                return response;
+                try {
+
+                    Double prev_lat = new Double(response.get("prev_lat").toString());
+                    Double prev_long = new Double(response.get("prev_long").toString());
+                    Double current_lat = new Double(response.get("current_lat").toString());
+                    Double current_long = new Double(response.get("current_long").toString());
+                    Double velocity = new Double(response.get("velocity").toString());
+                    LatLng prev_latlong = new LatLng(prev_lat, prev_long);
+                    LatLng current_latlong = new LatLng(current_lat, current_long);
+                    moveVehicle(prev_latlong, current_latlong, velocity);
+                } catch (Exception e) {
+                    Log.d(TAG, "exception catch" + e);
+                }
+
+
+                Log.d(TAG, "Success get to remote api ........." + statusCode);
+                Log.d(TAG, "Success get to remote api ........." + response);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String res, Throwable t) {
+                // called when response HTTP status is "4XX" (eg. 401, 403, 404)
+                Log.d(TAG, "Failure to get api ...." + statusCode);
+            }
+        });
     }
 
-//    @Override
-//    public void onResume() {
-//        super.onResume();
-//        if (mGoogleApiClient.isConnected()) {
-//            startLocationUpdates();
-//            Log.d(TAG, "Location update resumed .....................");
-//        }
-//    }
+    public void moveVehicle(LatLng prev_lat, LatLng current_lat, Double velocity) {
+        setUpMap(current_lat);
 
-    protected void onStart() {
-        mGoogleApiClient.connect();
-        super.onStart();
-        Log.d(TAG, "Location update onStart .....................");
-    }
-
-    protected void onStop() {
-        mGoogleApiClient.disconnect();
-        super.onStop();
-        Log.d(TAG, "Location update onStop .....................");
-    }
-
-    private void updateUI() {
-        if (null != mCurrentLocation){
-            String lat = String.valueOf(mCurrentLocation.getLatitude());
-            String lng = String.valueOf(mCurrentLocation.getLongitude());
-            double d_lat = Double.parseDouble(lat);
-            double d_lng = Double.parseDouble(lng);
-            latlong = new LatLng(d_lat, d_lng);
-            setUpMap(latlong);
-        } else {
-            Log.d(TAG, "location is null ...............");
-        }
-    }
-
-
-    protected void startLocationUpdates() {
-        LocationServices.FusedLocationApi.requestLocationUpdates(
-                mGoogleApiClient, mLocationRequest, this);
-    }
-
-    protected void createLocationRequest() {
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(INTERVAL);
-        mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 }
-
 
 
