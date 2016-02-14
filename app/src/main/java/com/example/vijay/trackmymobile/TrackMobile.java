@@ -30,10 +30,7 @@ import cz.msebera.android.httpclient.Header;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TrackMobile extends FragmentActivity implements
-        LocationListener,
-        ConnectionCallbacks,
-        OnConnectionFailedListener {
+public class TrackMobile extends FragmentActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private static final String TAG = "TrackMobileActivity";
@@ -105,30 +102,6 @@ public class TrackMobile extends FragmentActivity implements
         mMap.getUiSettings().setCompassEnabled(true);
         CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latlong, 18);
         mMap.animateCamera(cameraUpdate);
-
-    }
-
-    @Override
-    public void onConnectionSuspended(int arg0) {
-        Log.d(TAG, "Connection suspended ...............");
-
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-//        mCurrentLocation = location;
-//        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-//        updateUI();
-    }
-
-    @Override
-    public void onConnected(Bundle bundle) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
-        Log.d(TAG, "Connection failed: " + connectionResult.toString());
 
     }
 
