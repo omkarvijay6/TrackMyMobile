@@ -44,13 +44,21 @@ public class TrackMobile extends FragmentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_track_mobile);
-        scheduleGetLocations();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        scheduleGetLocations();
         setUpMapIfNeeded();
+        Log.d(TAG, "Activity resume.....");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mHandler.removeCallbacksAndMessages(null);
+        Log.d(TAG, "Activity paused.....");
     }
 
     /**
