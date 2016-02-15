@@ -22,6 +22,11 @@ import org.json.JSONObject;
 
 import cz.msebera.android.httpclient.Header;
 
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+import android.animation.ObjectAnimator;
+import android.animation.TypeEvaluator;
+import android.util.Property;
 
 public class TrackMobile extends FragmentActivity {
 
@@ -30,6 +35,7 @@ public class TrackMobile extends FragmentActivity {
     private AsyncHttpClient mClient = new AsyncHttpClient();
     Handler mHandler = new Handler();
     private LatLng latlong;
+    private Marker marker;
     private static final long FIVE_SECONDS = 5000;
     private static final String GET_URL = "http://52.16.146.63/vehicle/location/";
 
@@ -57,7 +63,7 @@ public class TrackMobile extends FragmentActivity {
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
      * installed) and the map has not already been instantiated.. This will ensure that we only ever
-     * call {@link #setUpMap()} once when {@link #mMap} is not null.
+     * call {@link #//setUpMapMarker()} once when {@link #mMap} is not null.
      * <p>
      * If it isn't installed {@link SupportMapFragment} (and
      * {@link com.google.android.gms.maps.MapView MapView}) will show a prompt for the user to
@@ -89,8 +95,8 @@ public class TrackMobile extends FragmentActivity {
      * <p>
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
-    private void setUpMap(LatLng latlong) {
-        mMap.addMarker(new MarkerOptions()
+    private Marker setUpMapMarker(LatLng latlong) {
+        Marker marker = mMap.addMarker(new MarkerOptions()
                 .position(latlong)
                 .title("225D")
                 .snippet("Lingampally to Dilshuknagar")
@@ -103,7 +109,7 @@ public class TrackMobile extends FragmentActivity {
         mMap.getUiSettings().setCompassEnabled(true);
         CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latlong, 18);
         mMap.animateCamera(cameraUpdate);
-
+        return marker;
     }
 
     public void scheduleGetLocations() {
@@ -132,6 +138,7 @@ public class TrackMobile extends FragmentActivity {
                     Double velocity = new Double(response.get("velocity").toString());
                     LatLng prev_latlong = new LatLng(prev_lat, prev_long);
                     LatLng current_latlong = new LatLng(current_lat, current_long);
+                    setUpMapMarker(prev_latlong);
                     moveVehicle(prev_latlong, current_latlong, velocity);
                 } catch (Exception e) {
                     Log.d(TAG, "exception catch" + e);
@@ -151,8 +158,24 @@ public class TrackMobile extends FragmentActivity {
     }
 
     public void moveVehicle(LatLng prev_lat, LatLng current_lat, Double velocity) {
-        setUpMap(current_lat);
+        LatLngInterpolator latlngInterpolator = new LatLngInterpolator.LinearFixed();
+        latlngInterpolator.interpolate((float)20,prev_lat,current_lat);
+        animateMarker(marker,current_lat,latlngInterpolator);
 
+    }
+
+    static void animateMarker(Marker marker, LatLng finalPosition, final LatLngInterpolator latLngInterpolator) {
+
+        TypeEvaluator<LatLng> typeEvaluator = new TypeEvaluator<LatLng>() {
+            @Override
+            public LatLng evaluate(float fraction, LatLng startValue, LatLng endValue) {
+                return latLngInterpolator.interpolate(fraction, startValue, endValue);
+            }
+        };
+        Property<Marker, LatLng> property = Property.of(Marker.class, LatLng.class, "position");
+        ObjectAnimator animator = ObjectAnimator.ofObject(marker, property, typeEvaluator, finalPosition);
+        animator.setDuration(3000);
+        animator.start();
     }
 }
 
