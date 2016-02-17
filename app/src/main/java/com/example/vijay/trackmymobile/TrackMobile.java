@@ -16,29 +16,25 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 import android.os.Handler;
-
-
 import org.json.JSONObject;
-
 import cz.msebera.android.httpclient.Header;
-
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
-import android.animation.ObjectAnimator;
-import android.animation.TypeEvaluator;
-import android.util.Property;
+
 
 public class TrackMobile extends FragmentActivity {
 
-    private GoogleMap mMap; // Might be null if Google Play services APK is not available.
+    private GoogleMap googleMap; // Might be null if Google Play services APK is not available.
     private static final String TAG = "TrackMobileActivity";
     private AsyncHttpClient mClient = new AsyncHttpClient();
     Handler mHandler = new Handler();
-    private LatLng latlong;
     private Marker marker;
+
+
     private static final long FIVE_SECONDS = 5000;
     private static final String GET_URL = "http://52.16.146.63/vehicle/location/";
-
+    //initializing custom Marker
+    //TODO : Need to call the constructor instead of initializing it here
+    CustomMarker myMarker = new CustomMarker("",(double)0,(double)0);
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,7 +59,7 @@ public class TrackMobile extends FragmentActivity {
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
      * installed) and the map has not already been instantiated.. This will ensure that we only ever
-     * call {@link #//setUpMapMarker()} once when {@link #mMap} is not null.
+     * call {@link #//setUpMapMarker()} once when {@link #googleMap} is not null.
      * <p>
      * If it isn't installed {@link SupportMapFragment} (and
      * {@link com.google.android.gms.maps.MapView MapView}) will show a prompt for the user to
@@ -77,39 +73,40 @@ public class TrackMobile extends FragmentActivity {
      */
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
-        if (mMap == null) {
+        if (googleMap == null) {
             // Try to obtain the map from the SupportMapFragment.
-            mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
+            googleMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
                     .getMap();
+            //TODO: Need to remove the hacks
             // Check if we were successful in obtaining the map.
-//            if (mMap != null) {
+//            if (googleMap != null) {
 //                latlong = new LatLng(49, 79);
 //                setUpMap(latlong);
 //            }
         }
     }
 
-    /**
-     * This is where we can add markers or lines, add listeners or move the camera. In this case, we
-     * just add a marker near Africa.
-     * <p>
-     * This should only be called once and when we are sure that {@link #mMap} is not null.
+    /*This method is used to add a new marker if it does not exisit
      */
-    private Marker setUpMapMarker(LatLng latlong) {
-        Marker marker = mMap.addMarker(new MarkerOptions()
-                .position(latlong)
+
+    public void addMarker(CustomMarker customMarker){
+        LatLng latlng = new LatLng(customMarker.getCustomMarkerLatitude(),
+                         customMarker.getCustomMarkerLongitude());
+        Log.d(TAG,"Success addMarker Latitude  "  + latlng.latitude);
+        Log.d(TAG,"Success addMarker Longitude "  + latlng.longitude);
+        marker = googleMap.addMarker(new MarkerOptions()
+                .position(latlng)
                 .title("225D")
                 .snippet("Lingampally to Dilshuknagar")
                 .draggable(false)
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
-        mMap.setMyLocationEnabled(false); // false to disable
-        mMap.getUiSettings().setZoomControlsEnabled(true);
-        mMap.getUiSettings().setMyLocationButtonEnabled(false);
-        mMap.getUiSettings().setZoomGesturesEnabled(true);
-        mMap.getUiSettings().setCompassEnabled(true);
-        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latlong, 18);
-        mMap.animateCamera(cameraUpdate);
-        return marker;
+        googleMap.setMyLocationEnabled(false); // false to disable
+        googleMap.getUiSettings().setZoomControlsEnabled(true);
+        googleMap.getUiSettings().setMyLocationButtonEnabled(false);
+        googleMap.getUiSettings().setZoomGesturesEnabled(true);
+        googleMap.getUiSettings().setCompassEnabled(true);
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latlng, 18);
+        googleMap.animateCamera(cameraUpdate);
     }
 
     public void scheduleGetLocations() {
@@ -138,13 +135,20 @@ public class TrackMobile extends FragmentActivity {
                     Double velocity = new Double(response.get("velocity").toString());
                     LatLng prev_latlong = new LatLng(prev_lat, prev_long);
                     LatLng current_latlong = new LatLng(current_lat, current_long);
-                    setUpMapMarker(prev_latlong);
-                    moveVehicle(prev_latlong, current_latlong, velocity);
+                    //TODO : Need to write a function which returns boolean values
+                    if ((myMarker.getCustomMarkerLatitude() == 0) &&
+                            (myMarker.getCustomMarkerLongitude()== 0)){
+                        myMarker.setCustomMarkerId("myMarker");
+                        myMarker.setCustomMarkerLatitude(current_lat);
+                        myMarker.setCustomMarkerLongitude(current_long);
+                        findMarker(myMarker);
+                        addMarker(myMarker);
+                    } else {
+                        moveVehicle(prev_latlong, current_latlong, velocity);
+                    }
                 } catch (Exception e) {
                     Log.d(TAG, "exception catch" + e);
                 }
-
-
                 Log.d(TAG, "Success get to remote api ........." + statusCode);
                 Log.d(TAG, "Success get to remote api ........." + response);
             }
@@ -158,25 +162,54 @@ public class TrackMobile extends FragmentActivity {
     }
 
     public void moveVehicle(LatLng prev_lat, LatLng current_lat, Double velocity) {
-        LatLngInterpolator latlngInterpolator = new LatLngInterpolator.LinearFixed();
-        latlngInterpolator.interpolate((float)20,prev_lat,current_lat);
-        animateMarker(marker,current_lat,latlngInterpolator);
-
+        Log.d(TAG, "Success moveVehicle");
+        animateMarker(myMarker, current_lat);
     }
 
-    static void animateMarker(Marker marker, LatLng finalPosition, final LatLngInterpolator latLngInterpolator) {
+    //this is method to help us find a Marker that is stored into the hashmap
 
-        TypeEvaluator<LatLng> typeEvaluator = new TypeEvaluator<LatLng>() {
-            @Override
-            public LatLng evaluate(float fraction, LatLng startValue, LatLng endValue) {
-                return latLngInterpolator.interpolate(fraction, startValue, endValue);
+    public Marker findMarker(CustomMarker customMarker) {
+        Log.d(TAG,"Success Calling findMarker");
+        Log.d(TAG,"Success findMarker Markerid " + customMarker.getCustomMarkerId());
+        Log.d(TAG,"Success findMarker latitude " + customMarker.getCustomMarkerLatitude());
+        Log.d(TAG,"Success findMarker longitude " + customMarker.getCustomMarkerLongitude());
+        if((customMarker.getCustomMarkerLatitude() != 0) &&
+                (customMarker.getCustomMarkerLongitude() != 0)) {
+            Log.d(TAG,"Success finding marker ");
+            return marker;
+        }
+        else {
+            return null;
+        }
+    }
+
+    /*The function is used to animate the Marker
+      Different implementations of the function are invoked depending on the
+      Android device.
+     */
+    public void animateMarker(CustomMarker customMarker, LatLng latlng) {
+        if (findMarker(customMarker) != null) {
+            Log.d(TAG,"Success animateMarker");
+            LatLngInterpolator latlngInter = new LatLngInterpolator.LinearFixed();
+            latlngInter.interpolate(20,
+            new LatLng(customMarker.getCustomMarkerLatitude(), customMarker.getCustomMarkerLongitude()), latlng);
+            customMarker.setCustomMarkerLatitude(latlng.latitude);
+            customMarker.setCustomMarkerLongitude(latlng.longitude);
+
+            if (android.os.Build.VERSION.SDK_INT >= 14) {
+                Log.d(TAG,"Animating marker for ICS Android");
+                MarkerAnimation.animateMarkerToICS(findMarker(customMarker), new LatLng(customMarker.getCustomMarkerLatitude(),
+                        customMarker.getCustomMarkerLongitude()), latlngInter);
+            } else if (android.os.Build.VERSION.SDK_INT >= 11) {
+                MarkerAnimation.animateMarkerToHC(findMarker(customMarker), new LatLng(customMarker.getCustomMarkerLatitude(),
+                        customMarker.getCustomMarkerLongitude()), latlngInter);
+            } else {
+                MarkerAnimation.animateMarkerToGB(findMarker(customMarker), new LatLng(customMarker.getCustomMarkerLatitude(),
+                        customMarker.getCustomMarkerLongitude()), latlngInter);
             }
-        };
-        Property<Marker, LatLng> property = Property.of(Marker.class, LatLng.class, "position");
-        ObjectAnimator animator = ObjectAnimator.ofObject(marker, property, typeEvaluator, finalPosition);
-        animator.setDuration(3000);
-        animator.start();
+        }
     }
+
 }
 
 
