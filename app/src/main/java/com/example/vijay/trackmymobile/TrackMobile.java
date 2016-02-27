@@ -191,7 +191,7 @@ public class TrackMobile extends FragmentActivity {
         if (findMarker(customMarker) != null) {
             Log.d(TAG,"Success animateMarker");
             LatLngInterpolator latlngInter = new LatLngInterpolator.LinearFixed();
-            latlngInter.interpolate(20,
+            latlngInter.interpolate(40,
             new LatLng(customMarker.getCustomMarkerLatitude(), customMarker.getCustomMarkerLongitude()), latlng);
             customMarker.setCustomMarkerLatitude(latlng.latitude);
             customMarker.setCustomMarkerLongitude(latlng.longitude);
