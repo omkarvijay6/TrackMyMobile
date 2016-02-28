@@ -14,6 +14,8 @@ import android.util.Property;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
 
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
@@ -40,6 +42,8 @@ public class MarkerAnimation {
                 v = interpolator.getInterpolation(t);
 
                 marker.setPosition(latLngInterpolator.interpolate(v, startPosition, finalPosition));
+                BitmapDescriptor icon = BitmapDescriptorFactory.fromAsset("images/vehicle_marker.png");
+                marker.setIcon(icon);
 
                 // Repeat till progress is complete.
                 if (t < 1) {
@@ -62,6 +66,8 @@ public class MarkerAnimation {
                 float v = animation.getAnimatedFraction();
                 LatLng newPosition = latLngInterpolator.interpolate(v, startPosition, finalPosition);
                 marker.setPosition(newPosition);
+                BitmapDescriptor icon = BitmapDescriptorFactory.fromAsset("images/vehicle_marker.png");
+                marker.setIcon(icon);
             }
         });
         valueAnimator.setFloatValues(0, 1); // Ignored.
@@ -80,6 +86,8 @@ public class MarkerAnimation {
         };
         Property<Marker, LatLng> property = Property.of(Marker.class, LatLng.class, "position");
         ObjectAnimator animator = ObjectAnimator.ofObject(marker, property, typeEvaluator, finalPosition);
+        BitmapDescriptor icon = BitmapDescriptorFactory.fromAsset("images/vehicle_marker.png");
+        marker.setIcon(icon);
         animator.setDuration(5000);
         animator.start();
     }
