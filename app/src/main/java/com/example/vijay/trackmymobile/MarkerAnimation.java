@@ -88,6 +88,20 @@ public class MarkerAnimation {
         ObjectAnimator animator = ObjectAnimator.ofObject(marker, property, typeEvaluator, finalPosition);
         BitmapDescriptor icon = BitmapDescriptorFactory.fromAsset("images/vehicle_marker.png");
         marker.setIcon(icon);
+        Double lat1 = Math.toRadians(marker.getPosition().latitude);
+        Double lng1 = Math.toRadians(marker.getPosition().longitude);
+        Double lat2 = Math.toRadians(finalPosition.latitude);
+        Double lng2 = Math.toRadians(finalPosition.longitude);
+        Double dPhi = Math.log(Math.tan(lat2/2.0+Math.PI/4.0)/Math.tan(lat1/2.0+Math.PI/4.0));
+        double dLong = (lng2-lng1);
+        if (Math.abs(dLong) > Math.PI){
+            if (dLong > 0.0)
+                dLong = -(2.0 * Math.PI - dLong);
+            else
+                dLong = (2.0 * Math.PI + dLong);
+        }
+        float brng = (float) ((Math.toDegrees(Math.atan2(dLong, dPhi)) + 360.0) % 360.0);
+        marker.setRotation(brng);
         animator.setDuration(5000);
         animator.start();
     }
