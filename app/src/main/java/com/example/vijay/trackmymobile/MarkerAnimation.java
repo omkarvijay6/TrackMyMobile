@@ -105,6 +105,7 @@ public class MarkerAnimation {
         }
         float brng = (float) ((Math.toDegrees(Math.atan2(dLong, dPhi)) + 360.0) % 360.0);
 //        marker.setRotation(brng);
+        marker.setAnchor(0.5f, 0.5f);
         rotateMarker(marker, brng);
         animator.setDuration(5000);
         animator.start();
